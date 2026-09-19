@@ -18,8 +18,8 @@ class ItemRepository {
         .select('*, categories(name), item_images(public_url)')
         .eq('status', 'ACTIVE');
     if (type != null) {
-      request = request.eq(
-          'item_type', type == ItemType.lost ? 'LOST' : 'FOUND');
+      request =
+          request.eq('item_type', type == ItemType.lost ? 'LOST' : 'FOUND');
     }
     if (query != null && query.trim().isNotEmpty) {
       final safeQuery = query.trim().replaceAll(',', ' ');
@@ -65,19 +65,23 @@ class ItemRepository {
       throw AuthException('You must be signed in to create a report.');
     }
 
-    final row = await _client.from('items').insert({
-      'user_id': userId,
-      'item_type': type == ItemType.lost ? 'LOST' : 'FOUND',
-      'title': title.trim(),
-      'category_id': categoryId,
-      'description': description.trim(),
-      'date_lost_or_found': date.toIso8601String().split('T').first,
-      'location': location.trim(),
-      'specific_location': specificLocation?.trim(),
-      'color': color?.trim(),
-      'brand': brand?.trim(),
-      'model': model?.trim(),
-    }).select('*, categories(name), item_images(public_url)').single();
+    final row = await _client
+        .from('items')
+        .insert({
+          'user_id': userId,
+          'item_type': type == ItemType.lost ? 'LOST' : 'FOUND',
+          'title': title.trim(),
+          'category_id': categoryId,
+          'description': description.trim(),
+          'date_lost_or_found': date.toIso8601String().split('T').first,
+          'location': location.trim(),
+          'specific_location': specificLocation?.trim(),
+          'color': color?.trim(),
+          'brand': brand?.trim(),
+          'model': model?.trim(),
+        })
+        .select('*, categories(name), item_images(public_url)')
+        .single();
 
     return Item.fromMap(Map<String, dynamic>.from(row));
   }
@@ -92,11 +96,7 @@ class ItemRepository {
       throw AuthException('You must be signed in to upload an image.');
     }
     final path = '$userId/$itemId/$fileName';
-    await _client.storage.from('item-images').uploadBinary(
-          path,
-          bytes,
-          fileOptions: const FileOptions(contentType: 'image/jpeg'),
-        );
+
     final publicUrl = _client.storage.from('item-images').getPublicUrl(path);
     await _client.from('item_images').insert({
       'item_id': itemId,
