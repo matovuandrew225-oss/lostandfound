@@ -1,0 +1,24 @@
+# Dart / Flutter
+.dart_tool/
+.packages
+.pub-cache/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+build/
+coverage/
+
+# IDEs
+.idea/
+.vscode/*
+!.vscode/settings.json
+*.iml
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Replit / generated files
+.cache/
+attached_assets/
