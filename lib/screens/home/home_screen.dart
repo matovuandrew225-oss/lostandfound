@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../models/item.dart';
+import '../../services/api_client.dart';
 import '../../services/item_repository.dart';
 import '../../widgets/item_card.dart';
 import '../profile/profile_screen.dart';
@@ -17,7 +17,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final _repository = ItemRepository(Supabase.instance.client);
+  final _repository = ItemRepository(ApiClient.instance);
   int _selectedIndex = 0;
   bool _loading = true;
   String? _error;
@@ -189,8 +189,8 @@ class _HomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = Supabase.instance.client.auth.currentUser;
-    final name = user?.userMetadata?['full_name'] as String? ?? 'there';
+    final user = ApiClient.instance.currentUser;
+    final name = user?.fullName ?? 'there';
     final lost = items.where((item) => item.isLost).toList();
     final found = items.where((item) => !item.isLost).toList();
 

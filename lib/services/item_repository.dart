@@ -1,50 +1,29 @@
-// The Supabase Dart query builder changes its concrete generic type as filters
-// are appended. Keeping the intermediate builder dynamic lets us compose
-// optional filters without weakening the public repository API.
-// ignore_for_file: avoid_dynamic_calls
-
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../models/item.dart';
+import 'api_client.dart';
 
 class ItemRepository {
-  ItemRepository(this._client);
+  ItemRepository(this._api);
 
-  final SupabaseClient _client;
+  final ApiClient _api;
 
   Future<List<Item>> fetchRecent({String? query, ItemType? type}) async {
-    dynamic request = _client
-        .from('items')
-        .select('*, categories(name), item_images(public_url)')
-        .eq('status', 'ACTIVE');
-    if (type != null) {
-      request =
-          request.eq('item_type', type == ItemType.lost ? 'LOST' : 'FOUND');
-    }
-    if (query != null && query.trim().isNotEmpty) {
-      final safeQuery = query.trim().replaceAll(',', ' ');
-      request = request.or(
-        'title.ilike.%$safeQuery%,description.ilike.%$safeQuery%,'
-        'location.ilike.%$safeQuery%,brand.ilike.%$safeQuery%,'
-        'reference_number.ilike.%$safeQuery%',
-      );
-    }
-    request = request.order('created_at', ascending: false).limit(30);
-
-    final rows = await request;
-    return (rows as List)
-        .map((row) => Item.fromMap(Map<String, dynamic>.from(row as Map)))
+    final response = await _api.get('/items', query: {
+      'status': 'ACTIVE',
+      'limit': '30',
+      if (query != null && query.trim().isNotEmpty) 'q': query.trim(),
+      if (type != null) 'item_type': type == ItemType.lost ? 'LOST' : 'FOUND',
+    });
+    final rows = response['data'] as List? ?? response['items'] as List? ?? [];
+    return rows
+        .map((row) => Item.fromMap((row as Map).cast<String, dynamic>()))
         .toList();
   }
 
   Future<List<Map<String, dynamic>>> fetchCategories() async {
-    final rows = await _client
-        .from('categories')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('sort_order');
-    return (rows as List)
-        .map((row) => Map<String, dynamic>.from(row as Map))
+    final response = await _api.get('/categories');
+    final rows = response['data'] as List? ?? response['categories'] as List? ?? [];
+    return rows
+        .map((row) => (row as Map).cast<String, dynamic>())
         .toList();
   }
 
@@ -60,30 +39,19 @@ class ItemRepository {
     String? brand,
     String? model,
   }) async {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) {
-      throw AuthException('You must be signed in to create a report.');
-    }
-
-    final row = await _client
-        .from('items')
-        .insert({
-          'user_id': userId,
-          'item_type': type == ItemType.lost ? 'LOST' : 'FOUND',
-          'title': title.trim(),
-          'category_id': categoryId,
-          'description': description.trim(),
-          'date_lost_or_found': date.toIso8601String().split('T').first,
-          'location': location.trim(),
-          'specific_location': specificLocation?.trim(),
-          'color': color?.trim(),
-          'brand': brand?.trim(),
-          'model': model?.trim(),
-        })
-        .select('*, categories(name), item_images(public_url)')
-        .single();
-
-    return Item.fromMap(Map<String, dynamic>.from(row));
+    final response = await _api.post('/items', {
+      'item_type': type == ItemType.lost ? 'LOST' : 'FOUND',
+      'title': title.trim(),
+      'category_id': categoryId,
+      'description': description.trim(),
+      'date_lost_or_found': date.toIso8601String().split('T').first,
+      'location': location.trim(),
+      'specific_location': specificLocation?.trim(),
+      'color': color?.trim(),
+      'brand': brand?.trim(),
+      'model': model?.trim(),
+    });
+    return Item.fromMap(_mapData(response));
   }
 
   Future<String> uploadImage({
@@ -91,18 +59,21 @@ class ItemRepository {
     required String fileName,
     required List<int> bytes,
   }) async {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) {
-      throw AuthException('You must be signed in to upload an image.');
-    }
-    final path = '$userId/$itemId/$fileName';
+    final response = await _api.postMultipart(
+      '/items/$itemId/images',
+      fileName: fileName,
+      bytes: bytes,
+      itemId: itemId,
+    );
+    return (_mapData(response)['url'] as String?) ?? '';
+  }
 
-    final publicUrl = _client.storage.from('item-images').getPublicUrl(path);
-    await _client.from('item_images').insert({
-      'item_id': itemId,
-      'storage_path': path,
-      'public_url': publicUrl,
-    });
-    return publicUrl;
+  static Map<String, dynamic> _mapData(Map<String, dynamic> response) {
+    final data = response['data'];
+    return data is Map
+        ? data.cast<String, dynamic>()
+        : response['item'] is Map
+            ? (response['item'] as Map).cast<String, dynamic>()
+            : response;
   }
 }

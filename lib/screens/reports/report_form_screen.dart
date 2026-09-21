@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../models/item.dart';
+import '../../services/api_client.dart';
 import '../../services/item_repository.dart';
 
 class ReportFormScreen extends StatefulWidget {
@@ -35,7 +35,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   @override
   void initState() {
     super.initState();
-    _repository = ItemRepository(Supabase.instance.client);
+    _repository = ItemRepository(ApiClient.instance);
     _loadCategories();
   }
 
@@ -103,7 +103,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
         ),
       );
       if (mounted) Navigator.of(context).pop();
-    } on AuthException catch (error) {
+    } on ApiException catch (error) {
       _message(error.message);
     } catch (_) {
       _message('The report could not be submitted. Please try again.');

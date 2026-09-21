@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../services/api_client.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -33,23 +33,22 @@ class _AuthScreenState extends State<AuthScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _busy = true);
     try {
-      final auth = Supabase.instance.client.auth;
       if (_registering) {
-        final response = await auth.signUp(
-          email: _email.text.trim(),
+        final verificationPending = await ApiClient.instance.register(
+          fullName: _name.text,
+          email: _email.text,
           password: _password.text,
-          data: {'full_name': _name.text.trim()},
         );
-        if (mounted && response.session == null) {
+        if (mounted && verificationPending) {
           _message('Check your email to verify your new account.');
         }
       } else {
-        await auth.signInWithPassword(
+        await ApiClient.instance.login(
           email: _email.text.trim(),
           password: _password.text,
         );
       }
-    } on AuthException catch (error) {
+    } on ApiException catch (error) {
       if (mounted) _message(error.message);
     } catch (_) {
       if (mounted) _message('Something went wrong. Please try again.');
@@ -65,9 +64,9 @@ class _AuthScreenState extends State<AuthScreen> {
       return;
     }
     try {
-      await Supabase.instance.client.auth.resetPasswordForEmail(email);
+      await ApiClient.instance.requestPasswordReset(email);
       if (mounted) _message('Password reset instructions sent to your email.');
-    } on AuthException catch (error) {
+    } on ApiException catch (error) {
       if (mounted) _message(error.message);
     }
   }

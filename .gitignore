@@ -22,3 +22,7 @@ coverage/
 # Replit / generated files
 .cache/
 attached_assets/
+
+# Backend-owned files stay in the private Replit workspace, not frontend GitHub
+backend/
+supabase/

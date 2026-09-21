@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../services/api_client.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final user = Supabase.instance.client.auth.currentUser;
-    final name = user?.userMetadata?['full_name'] as String? ?? 'Campus member';
+    final user = ApiClient.instance.currentUser;
+    final name = user?.fullName ?? 'Campus member';
     final email = user?.email ?? 'No email available';
 
     return ListView(
@@ -82,7 +82,7 @@ class ProfileScreen extends StatelessWidget {
                         title: const Text('Reset password'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () async {
-                          await Supabase.instance.client.auth.resetPasswordForEmail(email);
+                          await ApiClient.instance.requestPasswordReset(email);
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Password reset email sent.')),
@@ -94,7 +94,7 @@ class ProfileScreen extends StatelessWidget {
                       ListTile(
                         leading: const Icon(Icons.logout, color: AppTheme.burgundy),
                         title: const Text('Sign out', style: TextStyle(color: AppTheme.burgundy)),
-                        onTap: () => Supabase.instance.client.auth.signOut(),
+                        onTap: () => ApiClient.instance.logout(),
                       ),
                     ],
                   ),
