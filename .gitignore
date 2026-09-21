@@ -26,3 +26,6 @@ attached_assets/
 # Backend-owned files stay in the private Replit workspace, not frontend GitHub
 backend/
 supabase/
+
+# Agent working memory is local workspace metadata, not application source
+.agents/memory/
