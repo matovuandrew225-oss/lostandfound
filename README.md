@@ -54,17 +54,16 @@ Install Flutter 3.22+ and an Android, iOS, or Chrome target, then run:
 
 ```bash
 flutter pub get
-flutter run --dart-define=API_BASE_URL=https://your-replit-backend.example/api
+flutter run
 ```
 
 For Chrome:
 
 ```bash
-flutter run -d chrome \
-  --dart-define=API_BASE_URL=https://your-replit-backend.example/api
+flutter run -d chrome
 ```
 
-The app stops on a configuration screen when the required public values are absent. This is deliberate so a deployment never silently runs with fake data.
+The client defaults to the current Replit development API at https://8e3e8cf6-840e-40df-98a8-4cc7333d0c02-00-3ivl0lr9rugt3.janeway.replit.dev/api. You may override it for another environment with API_BASE_URL; no private backend credentials belong in Flutter.
 
 ## Validation
 
